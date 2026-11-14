@@ -1,0 +1,11 @@
+create extension if not exists pgcrypto;
+create table public.patients (id uuid primary key default gen_random_uuid(), mrn text unique not null, full_name text not null, date_of_birth date, sex text, phone text, allergies text, created_at timestamptz not null default now());
+create table public.encounters (id uuid primary key default gen_random_uuid(), patient_id uuid not null references public.patients(id) on delete cascade, occurred_at timestamptz not null default now(), chief_complaint text, history text, examination text, assessment text, plan text, author_id uuid references auth.users(id));
+create table public.prescriptions (id uuid primary key default gen_random_uuid(), encounter_id uuid not null references public.encounters(id) on delete cascade, medicine text not null, dose text, frequency text, duration text, instructions text, created_at timestamptz not null default now());
+create table public.clinical_documents (id uuid primary key default gen_random_uuid(), patient_id uuid not null references public.patients(id) on delete cascade, storage_path text not null, document_type text, extracted_text text, created_at timestamptz not null default now());
+alter table public.patients enable row level security; alter table public.encounters enable row level security; alter table public.prescriptions enable row level security; alter table public.clinical_documents enable row level security;
+create policy "clinical staff can read patients" on public.patients for select to authenticated using (true);
+create policy "clinical staff can manage patients" on public.patients for all to authenticated using (true) with check (true);
+create policy "clinical staff can manage encounters" on public.encounters for all to authenticated using (true) with check (true);
+create policy "clinical staff can manage prescriptions" on public.prescriptions for all to authenticated using (true) with check (true);
+create policy "clinical staff can manage documents" on public.clinical_documents for all to authenticated using (true) with check (true);
